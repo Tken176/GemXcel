@@ -756,7 +756,7 @@ def _refresh_access_token(refresh_token: str) -> str:
     import urllib.request
 
     SUPABASE_URL = "https://hwqlvikkzeybssocyjjn.supabase.co"
-    SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY"  # <-- Điền anon key của bạn vào đây
+    SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3cWx2aWtremV5YnNzb2N5ampuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMjI0MjIsImV4cCI6MjA5MDc5ODQyMn0.TbE6dcFZsCWh0267JpDm4dQFbWEgIgU3EN5OUXM5CLg"  # <-- Điền anon key của bạn vào đây
 
     url = f"{SUPABASE_URL}/auth/v1/token?grant_type=refresh_token"
     payload = json.dumps({"refresh_token": refresh_token}).encode("utf-8")

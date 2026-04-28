@@ -683,28 +683,36 @@ def draw_avatar_selection(screen: pygame.Surface, game_state: 'GameState', click
 # ==========================================
 # KHỞI CHẠY GEM AI (WEB CHATBOT)
 # ==========================================
+# ==========================================
+# KHỞI CHẠY GEM AI (WEB CHATBOT)
+# ==========================================
 def _open_integrated_gem_ai(game_state: 'GameState') -> None:
     try:
-        # 1. Lấy đường dẫn chuẩn đến AppData/Roaming để đọc token
+        # 1. Đọc refresh_token từ file auth_session.json
         appdata_path = os.environ.get('APPDATA')
         auth_file = os.path.join(appdata_path, "GemxelProject", "auth_session.json")
         
-        access_token = ""
+        refresh_token = ""
         if os.path.exists(auth_file):
             with open(auth_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                session_data = data.get("session", data) 
-                access_token = session_data.get("access_token", "")
-                print(access_token)
-        
-        if not access_token:
-            print("Cảnh báo: AI không lấy được token. File auth_session.json trống hoặc chưa đăng nhập.")
+                session_data = data.get("session", data)
+                refresh_token = session_data.get("refresh_token", "")
 
-        # 2. Tạo file HTML tạm trong thư mục Temp của máy tính
+        if not refresh_token:
+            print("Cảnh báo: Không tìm thấy refresh_token. Vui lòng đăng nhập lại.")
+            return
+
+        # 2. Dùng refresh_token gọi Supabase để lấy access_token mới
+        access_token = _refresh_access_token(refresh_token)
+
+        if not access_token:
+            print("Cảnh báo: Không thể làm mới token. Vui lòng đăng nhập lại.")
+            return
+
+        # 3. Tạo file HTML tạm và gắn token mới vào
         temp_dir = tempfile.gettempdir()
         html_file = os.path.join(temp_dir, "gem_ai_chat.html")
-
-        # 3. Gắn token vào template HTML.
         html_content = GEM_AI_HTML.replace("__ACCESS_TOKEN__", access_token)
         
         with open(html_file, "w", encoding="utf-8") as f:
@@ -716,7 +724,6 @@ def _open_integrated_gem_ai(game_state: 'GameState') -> None:
         browser_args = [f"--app={file_url}", "--new-window", "--window-size=500,600",
                         "--window-position=200,50", "--disable-features=TranslateUI"]
 
-        # Ưu tiên Chrome
         chrome_paths = [
             r"C:\Program Files\Google\Chrome\Application\chrome.exe",
             r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
@@ -727,7 +734,6 @@ def _open_integrated_gem_ai(game_state: 'GameState') -> None:
                 subprocess.Popen([p] + browser_args + [f"--user-data-dir={profile_dir}_chrome"])
                 return
 
-        # Nếu không có Chrome, mở bằng Edge
         edge_paths = [
             r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
             r"C:\Program Files\Microsoft\Edge\Application\msedge.exe"
@@ -737,10 +743,76 @@ def _open_integrated_gem_ai(game_state: 'GameState') -> None:
                 subprocess.Popen([p] + browser_args + [f"--user-data-dir={profile_dir}_edge"])
                 return
 
-        # Nếu không có cả hai, mở bằng trình duyệt mặc định
         webbrowser.open(file_url)
     except Exception as e:
         print(f"Lỗi khi mở GEM AI: {e}")
+
+
+def _refresh_access_token(refresh_token: str) -> str:
+    """
+    Gọi Supabase Auth API để đổi refresh_token lấy access_token mới.
+    Trả về access_token mới hoặc chuỗi rỗng nếu thất bại.
+    """
+    import urllib.request
+
+    SUPABASE_URL = "https://hwqlvikkzeybssocyjjn.supabase.co"
+    SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY"  # <-- Điền anon key của bạn vào đây
+
+    url = f"{SUPABASE_URL}/auth/v1/token?grant_type=refresh_token"
+    payload = json.dumps({"refresh_token": refresh_token}).encode("utf-8")
+    headers = {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_ANON_KEY,
+    }
+
+    try:
+        req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+            new_access_token = result.get("access_token", "")
+            new_refresh_token = result.get("refresh_token", "")
+
+            # Lưu lại session mới vào file để dùng cho lần sau
+            if new_access_token:
+                _save_new_session(new_access_token, new_refresh_token, result)
+
+            return new_access_token
+    except Exception as e:
+        print(f"Lỗi khi refresh token: {e}")
+        return ""
+
+
+def _save_new_session(access_token: str, refresh_token: str, full_response: dict) -> None:
+    """Ghi session mới (access + refresh token) về lại file auth_session.json."""
+    try:
+        appdata_path = os.environ.get('APPDATA')
+        auth_file = os.path.join(appdata_path, "GemxelProject", "auth_session.json")
+
+        # Đọc file cũ để giữ các trường không liên quan (ví dụ: user info)
+        existing = {}
+        if os.path.exists(auth_file):
+            with open(auth_file, "r", encoding="utf-8") as f:
+                existing = json.load(f)
+
+        session = existing.get("session", existing)
+        session["access_token"] = access_token
+        session["refresh_token"] = refresh_token
+        # Supabase trả về expires_in (giây), lưu luôn nếu có
+        if "expires_in" in full_response:
+            session["expires_in"] = full_response["expires_in"]
+        if "expires_at" in full_response:
+            session["expires_at"] = full_response["expires_at"]
+
+        if "session" in existing:
+            existing["session"] = session
+        else:
+            existing = session
+
+        with open(auth_file, "w", encoding="utf-8") as f:
+            json.dump(existing, f, ensure_ascii=False, indent=2)
+
+    except Exception as e:
+        print(f"Lỗi khi lưu session mới: {e}")
 
 def open_music_selection(game_state):
     game_state.set_temp_screen("music_selection")

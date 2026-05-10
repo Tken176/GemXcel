@@ -147,6 +147,13 @@ class GameState:
                 except ValueError:
                     self.last_day = date.today()
 
+                # Load daily_study_seconds if same day, reset if new day
+                today = date.today()
+                if self.last_day == today:
+                    self.daily_study_seconds = data.get("daily_study_seconds", 0)
+                else:
+                    self.daily_study_seconds = 0  # Reset for new day
+
                 # Load timer data
                 self.buatangtoc_timer = data.get("buatangtoc_timer", None)
                 self.last_point_pack_time = data.get("last_point_pack_time", 0)
@@ -199,7 +206,8 @@ class GameState:
                 "max_streak": self.max_streak,
                 "total_quests_completed": self.total_quests_completed,
                 "buatangtoc_timer": self.buatangtoc_timer,
-                "last_point_pack_time": self.last_point_pack_time
+                "last_point_pack_time": self.last_point_pack_time,
+                "daily_study_seconds": self.daily_study_seconds
             }
             with open(self.file_path, "w", encoding="utf-8") as f:
                 json.dump(data_to_save, f, ensure_ascii=False, indent=4)

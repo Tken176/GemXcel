@@ -193,14 +193,25 @@ def check_answer_mcq(game_state, bai, idx, selected):
     pygame.event.post(pygame.event.Event(pygame.USEREVENT, {'force_redraw': True}))
 
 def finish_quiz_session(game_state, bonus_points=50):
-    try: game_state.point += bonus_points
-    except Exception: pass
-    try: game_state.completed_lessons.append(game_state.quiz_state.get("bai"))
-    except Exception: pass
-    game_state.quiz_state = {"bai": None, "index": 0, "answered": False, "selected": None, "feedback": ""}
-    game_state.current_screen = config.SCREEN_LESSON
-    try: game_state.write_data()
-    except Exception: pass
+    try:
+        if hasattr(game_state, 'quiz_finish_session'):
+            game_state.quiz_finish_session(bonus_points)
+        else:
+            game_state.point += bonus_points
+            if game_state.quiz_state.get("bai") not in game_state.completed_lessons:
+                game_state.completed_lessons.append(game_state.quiz_state.get("bai"))
+            game_state.quiz_state = {"bai": None, "index": 0, "answered": False, "selected": None, "feedback": ""}
+            game_state.current_screen = config.SCREEN_LESSON
+            game_state.write_data()
+    except Exception:
+        try: game_state.point += bonus_points
+        except Exception: pass
+        try: game_state.completed_lessons.append(game_state.quiz_state.get("bai"))
+        except Exception: pass
+        game_state.quiz_state = {"bai": None, "index": 0, "answered": False, "selected": None, "feedback": ""}
+        game_state.current_screen = config.SCREEN_LESSON
+        try: game_state.write_data()
+        except Exception: pass
 
 def next_quiz_question(game_state):
     game_state.quiz_state["index"] += 1

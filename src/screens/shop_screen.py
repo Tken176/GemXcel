@@ -39,7 +39,7 @@ def load_item_images():
             item["img_normal"] = scale_keep_ratio(img_normal)
             item["img_hover"] = scale_keep_ratio(img_hover)
         except pygame.error as e:
-            print(f"Không thể load ảnh cho {item['name']}: {e}")
+            config.logger.warning("Không thể load ảnh cho %s: %s", item['name'], e)
             
     _images_loaded = True
 

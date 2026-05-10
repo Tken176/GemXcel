@@ -28,31 +28,29 @@ from screens.quiz_screen import draw_quiz_screen
 # KHỞI TẠO HỆ THỐNG & ĐƯỜNG DẪN
 # ==========================================
 
-def get_resource_path(relative_path):
-    """Lấy đường dẫn đúng đến resource file (Hỗ trợ PyInstaller --onefile)"""
-    try:
-        base_path = sys._MEIPASS
-    except AttributeError:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
-
 def initialize_app():
     """Khởi tạo cấu trúc thư mục và migrate data nếu cần"""
     config.migrate_old_data()
     config.ensure_data_directories()
 
+# Với PyInstaller thì config.get_resource_path đã xử lý đúng; trong môi trường dev,
+# dùng đường dẫn tương đối với file config.py để tránh phụ thuộc cwd.
+
 if __name__ == "__main__":
     initialize_app()
 
 pygame.init()
-pygame.mixer.init()
+try:
+    pygame.mixer.init()
+except Exception:
+    config.logger.warning("Không thể khởi tạo mixer âm thanh; tắt âm thanh tự động.")
 
 # Cấu hình cửa sổ
 SCREEN = pygame.display.set_mode((config.WIDTH, config.HEIGHT))
 pygame.display.set_caption("GEMXCEL")
 
 # Load Icon
-icon_path = get_resource_path("icon.ico")
+icon_path = config.ICON_PATH
 if os.path.exists(icon_path):
     pygame.display.set_icon(pygame.image.load(icon_path))
 
@@ -61,9 +59,16 @@ if os.path.exists(icon_path):
 # ==========================================
 
 # Âm thanh
-click_sound = pygame.mixer.Sound(os.path.join(config.ASSETS_DIR, "audio", "click.mp3"))
-correct_sound = pygame.mixer.Sound(config.SOUND_CORRECT_PATH)
-wrong_sound = pygame.mixer.Sound(config.SOUND_WRONG_PATH)
+click_sound = None
+correct_sound = None
+wrong_sound = None
+if pygame.mixer.get_init():
+    try:
+        click_sound = pygame.mixer.Sound(os.path.join(config.ASSETS_DIR, "audio", "click.mp3"))
+        correct_sound = pygame.mixer.Sound(config.SOUND_CORRECT_PATH)
+        wrong_sound = pygame.mixer.Sound(config.SOUND_WRONG_PATH)
+    except Exception as e:
+        config.logger.warning("Không thể tải âm thanh: %s", e)
 
 # Set âm thanh cho các module
 screens.exercise_screen.set_click_sound(click_sound)
@@ -78,7 +83,7 @@ game_state = GameState(file_path=config.DATA_FILE_PATH)
 # Phát nhạc nền
 # Bạn tìm đoạn code cũ tương tự như vầy và thay thế:
 
-if game_state.current_music:  # <-- Thêm dòng kiểm tra này
+if game_state.current_music:
     music_path = os.path.join(config.ASSETS_DIR, "audio", game_state.current_music)
     if os.path.exists(music_path):
         try:
@@ -86,7 +91,7 @@ if game_state.current_music:  # <-- Thêm dòng kiểm tra này
             pygame.mixer.music.set_volume(game_state.music_volume)
             pygame.mixer.music.play(-1)
         except Exception as e:
-            print(f"Lỗi load nhạc: {e}")
+            config.logger.warning("Lỗi load nhạc: %s", e)
 
 # ==========================================
 # BIẾN TOÀN CỤC & HÀM TIỆN ÍCH
@@ -365,6 +370,6 @@ while running:
 # ==========================================
 # LƯU TRẠNG THÁI & THOÁT
 # ==========================================
-game_state.write_data()
+game_state.save_on_exit()
 pygame.quit()
 sys.exit()

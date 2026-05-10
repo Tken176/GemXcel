@@ -51,7 +51,6 @@ def load_lessons_data():
 
 
 def check_for_updates(game_state):
-    """Kiểm tra file dữ liệu có thay đổi không và reset completed_lessons nếu cần"""
     global last_modified_time, lessons_content_hash
     
     try:
@@ -60,6 +59,10 @@ def check_for_updates(game_state):
         # Nếu file đã được modify
         if current_time > last_modified_time:
             last_modified_time = current_time
+            
+            # BẮT ĐẦU THÊM MỚI: Báo cho main.py biết để reload quiz_data
+            pygame.event.post(pygame.event.Event(pygame.USEREVENT + 2))
+            # KẾT THÚC THÊM MỚI
             
             # Load lessons mới
             new_lessons = load_lessons_data()

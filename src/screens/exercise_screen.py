@@ -12,6 +12,7 @@ correct_sound = None
 wrong_sound = None
 click_sound = None
 transition_timer = None
+last_quiz_modified_time = 0
 
 # Custom Button để xử lý nhiều dòng text không bị main.py vẽ đè lên
 class MultilineButton(ui_elements.Button):
@@ -88,7 +89,7 @@ def load_exercise_data():
                         elif q_type in ["fill", "drag"] and "choices" not in question:
                             question["choices"] = question.get("words", [])
     except Exception as e:
-        print(f"Error loading exercise data: {e}")
+        config.logger.warning("Error loading exercise data: %s", e)
         exercise_data = {"easy": [], "medium": [], "hard": []}
 
 def create_difficulty_callback(difficulty, game_state, switch_screen_callback):
@@ -101,8 +102,19 @@ def create_difficulty_callback(difficulty, game_state, switch_screen_callback):
     return callback
 
 def draw_exercise(screen, game_state, switch_screen_callback):
-    global exercise_data
-    if exercise_data is None: load_exercise_data()
+    global exercise_data, last_quiz_modified_time
+    try:
+        # Kiểm tra xem file có thay đổi không để load lại
+        if os.path.exists(config.QUIZ_DATA_FILE_PATH):
+            current_time = os.path.getmtime(config.QUIZ_DATA_FILE_PATH)
+            if current_time > last_quiz_modified_time:
+                last_quiz_modified_time = current_time
+                load_exercise_data()
+    except Exception:
+        pass
+
+    if exercise_data is None: 
+        load_exercise_data()
 
     buttons = []
     draw_mode_description(screen, 150, config.WIDTH - 620)

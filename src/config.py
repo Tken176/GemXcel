@@ -4,7 +4,8 @@
 Config file cho Gemxel Project
 Xử lý đường dẫn tương thích với PyInstaller
 """
-
+import json
+import logging
 import pygame
 import os
 import sys
@@ -15,6 +16,10 @@ import sys
 
 # Khởi tạo pygame font system trước khi sử dụng
 pygame.font.init()
+
+# Thiết lập logger chung cho dự án
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
+logger = logging.getLogger("gemxcel")
 
 # Kích thước màn hình
 WIDTH, HEIGHT = 960, 640
@@ -127,7 +132,6 @@ DEFAULT_DIR = get_resource_path('assets/tai_nguyen/setting/default_avatar.png')
 
 # Thư mục con (resources)
 AVATAR_DIR = get_resource_path('assets/tai_nguyen/setting')
-AI_DIR = get_resource_path('screens/GEM_AI/chatbot_app.py')
 
 # File âm thanh (resources)
 SOUND_CORRECT_PATH = get_resource_path('assets/tai_nguyen/audio/success.wav')
@@ -157,10 +161,10 @@ def load_font_safely(font_path, size):
         if os.path.exists(font_path):
             return pygame.font.Font(font_path, size)
         else:
-            print(f"⚠️ Không tìm thấy font: {font_path}")
+            logger.warning("Không tìm thấy font: %s", font_path)
             return pygame.font.Font(None, size)  # Sử dụng system font
     except Exception as e:
-        print(f"⚠️ Lỗi khi load font: {e}")
+        logger.warning("Lỗi khi load font: %s", e)
         return pygame.font.Font(None, size)
 
 def load_icon_safely(icon_path):
@@ -169,13 +173,13 @@ def load_icon_safely(icon_path):
         if os.path.exists(icon_path):
             return pygame.image.load(icon_path)
         else:
-            print(f"⚠️ Không tìm thấy icon: {icon_path}")
+            logger.warning("Không tìm thấy icon: %s", icon_path)
             # Tạo icon mặc định (surface trống)
             icon = pygame.Surface((32, 32))
             icon.fill((255, 255, 255))
             return icon
     except Exception as e:
-        print(f"⚠️ Lỗi khi load icon: {e}")
+        logger.warning("Lỗi khi load icon: %s", e)
         icon = pygame.Surface((32, 32))
         icon.fill((255, 255, 255))
         return icon
@@ -338,17 +342,25 @@ def migrate_old_data():
                 import shutil
                 os.makedirs(os.path.dirname(new_path), exist_ok=True)
                 shutil.copy2(old_path, new_path)
-                print(f"✅ Đã di chuyển data: {os.path.basename(old_path)}")
+                logger.info("Đã di chuyển data: %s", os.path.basename(old_path))
             except Exception as e:
-                print(f"⚠️ Lỗi khi di chuyển {old_path}: {e}")
+                logger.warning("Lỗi khi di chuyển %s: %s", old_path, e)
 
 def ensure_data_directories():
-    """
-    Đảm bảo các thư mục data tồn tại
-    """
-    data_files = [DATA_FILE_PATH, QUIZ_DATA_FILE_PATH, LESSON_DATA_FILE_PATH]
-    for file_path in data_files:
+    """Đảm bảo các thư mục tồn tại và khởi tạo file JSON rỗng đúng định dạng"""
+    data_files = {
+        DATA_FILE_PATH: {},
+        QUIZ_DATA_FILE_PATH: {"metadata": {"total_questions": 0}},
+        LESSON_DATA_FILE_PATH: {"lessons": []}
+    }
+    
+    for file_path, default_content in data_files.items():
+        # Tạo thư mục cha
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        # Nếu file chưa tồn tại, tạo file với nội dung mặc định
+        if not os.path.exists(file_path):
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(default_content, f, ensure_ascii=False, indent=2)
 
 # ===============================
 # HIỂN THỊ THÔNG TIN DEBUG
@@ -356,23 +368,19 @@ def ensure_data_directories():
 
 def print_config_info():
     """In thông tin cấu hình để debug"""
-    print("=" * 50)
-    print("🔧 GEMXEL PROJECT CONFIG")
-    print("=" * 50)
-    print(f"📁 Base Directory: {BASE_DIR}")
-    print(f"🎨 Assets Directory: {ASSETS_DIR}")
-    print(f"🔤 Font Path: {FONT_PATH}")
-    print(f"🖼️ Icon Path: {ICON_PATH}")
-    print(f"📊 Screen Size: {WIDTH}x{HEIGHT}")
-    print(f"🎮 Pygame Font Initialized: {pygame.font.get_init()}")
-    print("--- DATA PATHS ---")
-    print(f"💾 Game Data: {DATA_FILE_PATH}")
-    print(f"📝 Quiz Data: {QUIZ_DATA_FILE_PATH}")
-    print(f"📚 Lesson Data: {LESSON_DATA_FILE_PATH}")
-    print(f"🔄 Frozen: {getattr(sys, 'frozen', False)}")
+    logger.info("GEMXEL PROJECT CONFIG")
+    logger.info("Base Directory: %s", BASE_DIR)
+    logger.info("Assets Directory: %s", ASSETS_DIR)
+    logger.info("Font Path: %s", FONT_PATH)
+    logger.info("Icon Path: %s", ICON_PATH)
+    logger.info("Screen Size: %sx%s", WIDTH, HEIGHT)
+    logger.info("Pygame Font Initialized: %s", pygame.font.get_init())
+    logger.info("Game Data: %s", DATA_FILE_PATH)
+    logger.info("Quiz Data: %s", QUIZ_DATA_FILE_PATH)
+    logger.info("Lesson Data: %s", LESSON_DATA_FILE_PATH)
+    logger.info("Frozen: %s", getattr(sys, 'frozen', False))
     if hasattr(sys, '_MEIPASS'):
-        print(f"📦 PyInstaller Temp: {sys._MEIPASS}")
-    print("=" * 50)
+        logger.info("PyInstaller Temp: %s", sys._MEIPASS)
 
 # Khởi tạo data directories khi import module
 ensure_data_directories()

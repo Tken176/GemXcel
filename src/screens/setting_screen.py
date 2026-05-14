@@ -346,8 +346,8 @@ def draw_setting(screen: pygame.Surface, game_state: 'GameState', click_sound: p
     buttons: List[ModernButton] = []
 
     # Tiêu đề
-    title_surf = _render_text_cached("CÀI ĐẶT & NHIỆM VỤ", config.FONT_TITLE, config.COLORS.get("accent", (200, 200, 255)))
-    screen.blit(title_surf, ((config.WIDTH - title_surf.get_width()) // 2, 40))
+    title_surf = _render_text_cached("NHIỆM VỤ        CÀI ĐẶT", config.FONT_TITLE, config.COLORS.get("accent", (200, 200, 255)))
+    screen.blit(title_surf, ((config.WIDTH - title_surf.get_width()) // 2 - 20, 40))
 
     # --- BẢNG NHIỆM VỤ ---
     init_daily_quests(game_state)

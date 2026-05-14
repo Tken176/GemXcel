@@ -67,6 +67,8 @@ class GameState:
 
         # Track daily study time
         self.session_study_start_time = datetime.now()
+        self.study_timer_last_tick = datetime.now()
+        self.study_timer_active = False
         self.daily_study_seconds = 0
 
         self.check_login_status()
@@ -114,6 +116,31 @@ class GameState:
 
     def set_temp_screen(self, screen_name):
         self.temp_screen = screen_name
+
+    def handle_screen_transition(self, new_screen):
+        """Flush reading time when leaving knowledge pages and prepare timers on screen change."""
+        now = datetime.now()
+
+        # Nếu đang đọc tài liệu, cộng thời gian khi rời khỏi màn hình kiến thức.
+        if getattr(self, 'current_screen', None) == config.SCREEN_KNOWLEDGE_PAGE:
+            if getattr(self, 'study_timer_active', False):
+                elapsed = (now - self.study_timer_last_tick).total_seconds()
+                self.daily_study_seconds += int(elapsed)
+            self.study_timer_active = False
+            self.last_answer_time = None
+
+        # Nếu vào màn hình kiến thức, bắt đầu đếm thời gian đọc.
+        if new_screen == config.SCREEN_KNOWLEDGE_PAGE:
+            self.study_timer_last_tick = now
+            self.study_timer_active = True
+            self.last_answer_time = None
+
+        # Nếu vào quiz, reset bộ đếm answer time để chỉ tính thời gian trả lời từ lúc vào quiz.
+        if new_screen in [config.SCREEN_QUIZ_SCREEN, config.SCREEN_EXERCISE_QUIZ]:
+            self.last_answer_time = now
+            self.study_timer_active = False
+
+        self.current_screen = new_screen
 
     def read_data(self):
         if os.path.exists(self.file_path):
@@ -472,6 +499,9 @@ class GameState:
                         
                         if retry_response.status_code in [200, 201, 204]:
                             config.logger.info("✅ Retry thành công!")
+                            if self.daily_study_seconds > 0:
+                                self.log_daily_study_time(self.daily_study_seconds)
+                                self.daily_study_seconds = 0
                             return
                         else:
                             config.logger.error("❌ Retry thất bại (%s): %s", retry_response.status_code, retry_response.text)
@@ -670,11 +700,17 @@ class GameState:
         self.session_correct_answers = 0
 
         self.reset_quiz_question_state()
-        self.current_screen = config.SCREEN_LESSON
+        if hasattr(self, 'handle_screen_transition'):
+            self.handle_screen_transition(config.SCREEN_LESSON)
+        else:
+            self.current_screen = config.SCREEN_LESSON
         self.write_data()
         
     def switch_to_lesson_screen(self, screen_name):
-        self.current_screen = screen_name
+        if hasattr(self, 'handle_screen_transition'):
+            self.handle_screen_transition(screen_name)
+        else:
+            self.current_screen = screen_name
         self.quiz_state = {"bai": None, "index": 0, "answered": False, "selected": None, "feedback": ""}
         self.write_data()
 

@@ -263,43 +263,44 @@ GEM_TYPES = [
         "id": 1, 
         "name": "Garnet", 
         "color": (128, 0, 0),
-        "description": "Viên đá của lòng dũng cảm. Ánh đỏ rực rỡ, biểu tượng cho sức mạnh, nhiệt huyết và sự lãnh đạo."
+        "description": "Viên đá của ý chí bất diệt. Trong suốt và kiên cố, biểu tượng cho sức mạnh nội tại."
     },
     {
         "id": 2, 
         "name": "Sapphire", 
         "color": (220, 220, 220),
-        "description": "Viên đá của trí tuệ. Xanh sâu thẳm như đại dương, tượng trưng cho tri thức và sự khôn ngoan."
+        "description": "Viên đá của cảm hứng. Lấp lánh nhiều màu sắc, giúp kích thích sáng tạo và biểu đạt cảm xúc." 
     },
     {
         "id": 3, 
         "name": "Ruby", 
         "color": (178, 34, 34),
-        "description": "Viên đá của sự hồi sinh. Màu xanh ngọc lục bảo đại diện cho sự sống, chữa lành và lòng từ bi."
+        "description": "Viên đá của lòng dũng cảm. Ánh đỏ rực rỡ, biểu tượng cho sức mạnh, nhiệt huyết và sự lãnh đạo."
     },
     {
         "id": 4, 
         "name": "Emerald", 
         "color": (255, 200, 0),
-        "description": "Viên đá của may mắn. Ánh sáng vàng óng mang năng lượng tích cực, giúp thu hút vận may và cơ hội."
+        "description": 
+        "Viên đá của sự hồi sinh. Màu xanh ngọc lục bảo đại diện cho sự sống, chữa lành và lòng từ bi." 
     },
     {
         "id": 5, 
         "name": "Aluminium", 
         "color": (25, 25, 25),
-        "description": "Viên đá của sự tỉnh thức. Tím huyền bí, đại diện cho bình an và trí tuệ tâm linh."
+        "description": "Viên đá của bí ẩn và bảo vệ. Màu đen sâu thẳm, giúp xua tan tiêu cực và tăng khả năng tập trung." 
     },
     {
         "id": 6, 
         "name": "Amethyst", 
         "color": (138, 43, 226),
-        "description": "Viên đá của ý chí bất diệt. Trong suốt và kiên cố, biểu tượng cho sức mạnh nội tại."
+        "description":         "Viên đá của sự tỉnh thức. Tím huyền bí, đại diện cho bình an và trí tuệ tâm linh."
     },
     {
         "id": 7, 
         "name": "Sapphire", 
         "color": (127, 255, 212),
-        "description": "Viên đá của bí ẩn và bảo vệ. Màu đen sâu thẳm, giúp xua tan tiêu cực và tăng khả năng tập trung."
+        "description": "Viên đá của trí tuệ. Xanh sâu thẳm như đại dương, tượng trưng cho tri thức và sự khôn ngoan."
     },
     {
         "id": 8, 
@@ -311,7 +312,7 @@ GEM_TYPES = [
         "id": 9, 
         "name": "Topaz", 
         "color": (255, 215, 0),
-        "description": "Viên đá của cảm hứng. Lấp lánh nhiều màu sắc, giúp kích thích sáng tạo và biểu đạt cảm xúc."
+        "description":        "Viên đá của may mắn. Ánh sáng vàng óng mang năng lượng tích cực, giúp thu hút vận may và cơ hội."    
     },
 ]
 

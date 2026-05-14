@@ -243,7 +243,10 @@ def draw_account(screen, font_title, font, colors, game_state):
                     game_state.logout() 
                 else:
                     game_state.is_logged_in = False
-                game_state.current_screen = config.SCREEN_HOME
+                if hasattr(game_state, 'handle_screen_transition'):
+                    game_state.handle_screen_transition(config.SCREEN_HOME)
+                else:
+                    game_state.current_screen = config.SCREEN_HOME
             elif hover_no:
                 if click_sound: click_sound.play()
                 game_state.show_logout_confirm = False 

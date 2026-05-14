@@ -164,6 +164,10 @@ def draw_exercise_quiz(screen, game_state, switch_screen_callback):
     top_y = 150
     content_width = page_width - 70
 
+    # Nút Quay lại (ở dưới bên trái)
+    back_button = ui_elements.Button(100, config.HEIGHT - 120, 120, 50, "Quay lại", lambda: exit_exercise_quiz(game_state, switch_screen_callback), (120, 80, 60), 90, click_sound)
+    buttons.append(back_button)
+
     # Tiến độ
     counter = config.FONT_SMALL.render(f"Câu {exercise_state['current_question']+1}/{len(exercise_state['questions'])}", True, (80, 120, 80))
     screen.blit(counter, (config.WIDTH - counter.get_width() - 100, config.HEIGHT - 50))
@@ -297,6 +301,18 @@ def start_exercise_session(game_state, difficulty, switch_screen_callback):
         "score": 0, "completed": False, "user_answer": None, "answered": False,
     }
     switch_screen_callback(config.SCREEN_EXERCISE_QUIZ)
+
+def exit_exercise_quiz(game_state, switch_screen_callback):
+    """Hàm xử lý quay lại từ quiz bài tập sớm (người dùng click nút Quay lại)"""
+    global transition_timer
+    if transition_timer:
+        pygame.time.set_timer(transition_timer, 0)
+        transition_timer = None
+    game_state.exercise_state = None
+    try: game_state.write_data()
+    except Exception: pass
+    if switch_screen_callback:
+        switch_screen_callback(config.SCREEN_EXERCISE)
 
 def show_result(game_state, switch_screen_callback):
     state = game_state.exercise_state

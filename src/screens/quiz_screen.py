@@ -53,7 +53,7 @@ def _ensure_quiz_state(game_state):
     if not hasattr(game_state, "quiz_state") or not isinstance(game_state.quiz_state, dict):
         game_state.quiz_state = {"bai": getattr(game_state, "current_lesson_id", None), "index": 0, "answered": False, "selected": None, "feedback": ""}
 
-def draw_quiz_screen(screen, font_title, font, font_small, colors, game_state, handle_button_click_callback, all_quiz_data):
+def draw_quiz_screen(screen, font_title, font, font_small, colors, game_state, handle_button_click_callback, all_quiz_data, switch_screen_callback=None):
     _ensure_quiz_state(game_state)
 
     current_bai = game_state.quiz_state.get("bai")
@@ -88,6 +88,12 @@ def draw_quiz_screen(screen, font_title, font, font_small, colors, game_state, h
 
     # --- VẼ ĐÁP ÁN BÊN PHẢI ---
     buttons = []
+    
+    # Nút Quay lại (ở dưới bên trái)
+    if switch_screen_callback:
+        back_button = ui_elements.Button(100, config.HEIGHT - 120, 120, 50, "Quay lại", lambda: handle_button_click_callback(exit_quiz_early, game_state, switch_screen_callback), (120, 80, 60), border_radius=90, click_sound=None)
+        buttons.append(back_button)
+    
     choices = q.get("choices", [])
     
     max_choice_len = max([len(str(c)) for c in choices]) if choices else 0
@@ -138,9 +144,9 @@ def draw_quiz_screen(screen, font_title, font, font_small, colors, game_state, h
         fb_surf = font.render(feedback, True, feedback_color)
         screen.blit(fb_surf, (right_x + (content_width - fb_surf.get_width()) // 2, y_offset + 10))
 
-        btn_w, btn_h = 160, 45
+        btn_w, btn_h = 180, 50
         btn_x = right_x + (content_width - btn_w) // 2
-        btn_y = config.HEIGHT - btn_h - 40
+        btn_y = config.HEIGHT - btn_h - 80
 
         if current_index < total_q - 1:
             nxt_btn = ui_elements.Button(btn_x, btn_y, btn_w, btn_h, "Câu tiếp theo", lambda: handle_button_click_callback(next_quiz_question, game_state), (100, 180, 100), 10, None)
@@ -150,11 +156,6 @@ def draw_quiz_screen(screen, font_title, font, font_small, colors, game_state, h
             fin_btn = ui_elements.Button(btn_x, btn_y, btn_w, btn_h, "Hoàn thành", lambda: handle_button_click_callback(finish_quiz_session, game_state), (100, 180, 100), 10, None)
             fin_btn.draw(screen)
             buttons.append(fin_btn)
-
-    # Hiển thị số câu (VD: Câu 1/10)
-    prog_surf = font_small.render(f"Câu {current_index + 1}/{total_q}", True, (0, 0, 0))
-    screen.blit(prog_surf, (10, config.HEIGHT - prog_surf.get_height() - 10))
-
     return buttons
 
 def reload_quiz_data(game_state):
@@ -201,7 +202,10 @@ def finish_quiz_session(game_state, bonus_points=50):
             if game_state.quiz_state.get("bai") not in game_state.completed_lessons:
                 game_state.completed_lessons.append(game_state.quiz_state.get("bai"))
             game_state.quiz_state = {"bai": None, "index": 0, "answered": False, "selected": None, "feedback": ""}
-            game_state.current_screen = config.SCREEN_LESSON
+            if hasattr(game_state, 'handle_screen_transition'):
+                game_state.handle_screen_transition(config.SCREEN_LESSON)
+            else:
+                game_state.current_screen = config.SCREEN_LESSON
             game_state.write_data()
     except Exception:
         try: game_state.point += bonus_points
@@ -209,7 +213,10 @@ def finish_quiz_session(game_state, bonus_points=50):
         try: game_state.completed_lessons.append(game_state.quiz_state.get("bai"))
         except Exception: pass
         game_state.quiz_state = {"bai": None, "index": 0, "answered": False, "selected": None, "feedback": ""}
-        game_state.current_screen = config.SCREEN_LESSON
+        if hasattr(game_state, 'handle_screen_transition'):
+            game_state.handle_screen_transition(config.SCREEN_LESSON)
+        else:
+            game_state.current_screen = config.SCREEN_LESSON
         try: game_state.write_data()
         except Exception: pass
 
@@ -221,3 +228,12 @@ def next_quiz_question(game_state):
     try: game_state.write_data()
     except Exception: pass
     pygame.event.post(pygame.event.Event(pygame.USEREVENT, {'force_redraw': True}))
+
+def exit_quiz_early(game_state, switch_screen_callback=None):
+    """Hàm xử lý quay lại từ quiz màn hình sớm (người dùng click nút Quay lại)"""
+    game_state.quiz_state = {"bai": None, "index": 0, "answered": False, "selected": None, "feedback": ""}
+    try: game_state.write_data()
+    except Exception: pass
+    if switch_screen_callback:
+        # Quay về trang kiến thức (bài học) trước đó
+        switch_screen_callback(config.SCREEN_KNOWLEDGE_PAGE)

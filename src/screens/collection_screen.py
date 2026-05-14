@@ -196,8 +196,8 @@ def draw_gem_detail_right_page(screen, font_title, font, font_small, colors, gem
     # Vẽ hiệu ứng phát sáng đặc biệt phía sau gem
     draw_gem_glow_effect(screen, (gem_center_x, animated_center_y), size, gem["color"], now)
     
-    # Vẽ ảnh gem thật (index + 1 vì gem1.png, gem2.png,...)
-    gem_img = load_gem_image(gem_index + 1)
+    # Vẽ ảnh gem thật theo id để đảm bảo đúng gem (gem1.png.. tương ứng id)
+    gem_img = load_gem_image(gem["id"])
     if gem_img:
         img_size = int(size * 1.5)  # Tăng kích thước ảnh
         gem_img_scaled = pygame.transform.scale(gem_img, (img_size, img_size))

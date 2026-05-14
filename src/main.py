@@ -102,7 +102,10 @@ IMAGE_CACHE = {}
 
 def switch_screen(screen_name):
     """Chuyển đổi màn hình"""
-    game_state.current_screen = screen_name
+    if hasattr(game_state, 'handle_screen_transition'):
+        game_state.handle_screen_transition(screen_name)
+    else:
+        game_state.current_screen = screen_name
 
 def handle_button_click(callback_function, *args):
     """Xử lý nhấn nút chống spam click (delay 200ms)"""
@@ -175,13 +178,17 @@ def get_knowledge_page_buttons():
     lesson_id = game_state.current_lesson_id
     spread_index = game_state.current_page_index
 
+    # Nút Quay lại (chỉ hiển thị ở trang đầu, ở trên bên trái như cũ)
+    if spread_index == 0:
+        buttons.append(ui_elements.Button(100, 50, 120, 50, "Quay lại", lambda: switch_screen(config.SCREEN_LESSON), (120, 80, 60), border_radius=10, click_sound=click_sound))
+
     if spread_index > 0:
-        buttons.append(ui_elements.Button(config.WIDTH//2 - 150, config.HEIGHT - 110, 100, 50, "Trước", lambda: handle_button_click(game_state.goto_prev_page), config.COLORS["text"], click_sound=click_sound))
+        buttons.append(ui_elements.Button(config.WIDTH//2 - 150, config.HEIGHT - 110, 100, 50, "Trước", lambda: handle_button_click(game_state.goto_prev_page), config.COLORS["text"], border_radius=10, click_sound=click_sound))
 
     if hasattr(game_state, "lesson_spreads") and spread_index < len(game_state.lesson_spreads) - 1:
-        buttons.append(ui_elements.Button(config.WIDTH//2 + 50, config.HEIGHT - 110, 100, 50, "Tiếp", lambda: handle_button_click(game_state.goto_next_page), config.COLORS["text"], click_sound=click_sound))
+        buttons.append(ui_elements.Button(config.WIDTH//2 + 50, config.HEIGHT - 110, 100, 50, "Tiếp", lambda: handle_button_click(game_state.goto_next_page), config.COLORS["text"], border_radius=10, click_sound=click_sound))
     else:
-        buttons.append(ui_elements.Button(config.WIDTH//2 + 50, config.HEIGHT - 110, 100, 50, "Bài tập", lambda: handle_button_click(screens.knowledge_page_screen.finish_lesson_and_start_quiz, game_state, lesson_id, switch_screen), config.COLORS["text"], click_sound=click_sound))
+        buttons.append(ui_elements.Button(config.WIDTH//2 + 50, config.HEIGHT - 110, 100, 50, "Bài tập", lambda: handle_button_click(screens.knowledge_page_screen.finish_lesson_and_start_quiz, game_state, lesson_id, switch_screen), config.COLORS["text"], border_radius=10, click_sound=click_sound))
     return buttons
 
 def update_shop_item_rects():
@@ -316,7 +323,7 @@ while running:
             current_frame_buttons.extend(screens.exercise_screen.draw_exercise_quiz(SCREEN, game_state, switch_screen) or [])
             
     elif game_state.current_screen == config.SCREEN_QUIZ_SCREEN:
-        current_frame_buttons.extend(draw_quiz_screen(SCREEN, config.FONT_TITLE, config.FONT, config.FONT_SMALL, config.COLORS, game_state, handle_button_click, quiz_data_module.quiz_data) or [])
+        current_frame_buttons.extend(draw_quiz_screen(SCREEN, config.FONT_TITLE, config.FONT, config.FONT_SMALL, config.COLORS, game_state, handle_button_click, quiz_data_module.quiz_data, switch_screen) or [])
         
     elif game_state.current_screen == config.SCREEN_SETTING:
         if hasattr(game_state, 'temp_screen') and game_state.temp_screen == "avatar_selection":

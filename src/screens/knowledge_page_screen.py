@@ -159,9 +159,10 @@ def draw_knowledge_page(screen, font_title, font, colors, game_state, handle_but
     if spread_index == 0:
         title_text = f"{current_lesson['name']}: {current_lesson['title']}"
         title_lines = wrap_title_text(title_text, font_title, content_width)
+        title_y = margin_y + 30  # Dời tiêu đề xuống để không bị nút che
         for i, line in enumerate(title_lines):
             title_surface = font_title.render(line, True, colors["text"])
-            screen.blit(title_surface, (margin_x, margin_y + i * (font_title.get_linesize() + 5)))
+            screen.blit(title_surface, (margin_x, title_y + i * (font_title.get_linesize() + 5)))
         extra_offset = len(title_lines) * (font_title.get_linesize() + 5) + 20
 
     # -----------------------------
